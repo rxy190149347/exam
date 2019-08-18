@@ -1,0 +1,69 @@
+#include "lcd.h"
+#include "lcdshow.h"
+#include "stm32f10x.h"
+#include "pid.h"
+#include "sys.h"
+
+extern pid_typedef pid;
+extern u8 kp[];
+extern u8 ki[];
+extern u8 kd[];
+u8 lcd_kp[10];
+u8 lcd_ki[10];
+u8 lcd_kd[10];
+u8 lastx = 45;
+u8 lasty = 219;
+/**************显示pid的值，坐标信息*******/
+void lcdshow_init(void)
+{
+	LCD_Display_Dir(1);	   //横屏显示
+//	POINT_COLOR=BLACK;
+	LCD_Clear(WHITE);
+	LCD_DrawLine(45,19,45,219);
+	LCD_DrawLine(45,219,160,219);
+	LCD_ShowNum(35,210,0,1,16);
+	LCD_ShowNum(10,187,1000,4,16);
+	LCD_ShowNum(10,154,2000,4,16);
+	LCD_ShowNum(10,121,3000,4,16);
+	LCD_ShowNum(10,88,4000,4,16);
+	LCD_ShowNum(10,55,5000,4,16);
+	LCD_ShowNum(10,22,6000,4,16);
+	LCD_ShowChar(35,2,'y',16,0);
+	LCD_ShowChar(160,221,'x',16,0);
+	LCD_ShowString(230,2,20,16,16,kp);		//显示一个字符串,12/16字体
+	LCD_ShowString(230,20,20,16,16,ki);
+	LCD_ShowString(230,38,20,16,16,kd);
+	
+	sprintf(lcd_kp,"%f",pid.Kp);
+	sprintf(lcd_ki,"%f",pid.Ki);
+	sprintf(lcd_kd,"%f",pid.Kd);
+	
+}
+
+
+/***********显示波形**********/
+void lcdshow(u16 x,u16 speed)
+{
+  u8 y;
+	y = 219-speed/33;
+	if(x == 46)
+	{
+		lastx = x;
+	  lasty = y;
+	}
+	LCD_DrawLine(lastx,lasty,x,y);
+	lastx = x;
+	lasty = y;
+//	sprintf(lcd_kp,"%f",pid.Kp);
+//	sprintf(lcd_ki,"%f",pid.Ki);
+//	sprintf(lcd_kd,"%f",pid.Kd);
+	LCD_ShowString(250,2,70,16,16,lcd_kp);
+	LCD_ShowString(250,20,70,16,16,lcd_ki);
+	LCD_ShowString(250,38,70,16,16,lcd_kd);
+}
+
+
+
+
+
+
