@@ -1,0 +1,58 @@
+#include "stm32f10x.h"
+#include "GT.h"
+#include "usart.h"
+#include "delay.h"
+#include "pwm.h"
+#include "pid.h"
+#include "sys.h"
+#include "timer.h"
+#include "lcd.h"
+#include "lcdshow.h"
+#include "key.h"
+#include "w25qxx.h"
+#include "spi.h"
+
+pid_typedef pid;
+extern u8 key;
+u8 kpbuf[8];
+u8 kibuf[8];
+u8 kdbuf[8];
+int main()
+{
+	PID_Init();                                      //pwm初始化
+	delay_init();                                             
+	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);	 //设置NVIC中断分组2:2位抢占优先级，2位响应优先级
+	uart_init(115200);	 //串口初始化为115200
+	EXTIX_Init();                                      // 外部中断初始化
+	pwm_init(4999,1);                                     //频率为7.2khz
+	TIM2_Int_Init(19999,71);                                //定时器二中断初始化
+	LCD_Init();                                          //LCD初始化
+  KEY_Init();                                         //按键初始化
+	W25QXX_Init();			//W25QXX初始化
+	
+	W25QXX_Read(kpbuf,128*1024*1024-100,8);					//从倒数第100个地址处开始,读出SIZE个字节
+	W25QXX_Read(kibuf,128*1024*1024-90,8);					//从倒数第90个地址处开始,读出SIZE个字节
+	W25QXX_Read(kdbuf,128*1024*1024-80,8);					//从倒数第80个地址处开始,读出SIZE个字节
+	pid.Kp = atof(kpbuf);                        //将字符串转换为数字
+	pid.Ki = atof(kibuf);                        //将字符串转换为数字
+	pid.Kd = atof(kdbuf);                        //将字符串转换为数字
+	lcdshow_init();                                    //lcd显示的初始化
+	TIM_SetCompare2(TIM3,set_pwm(pid.SetSpeed));
+	while(1)
+	{
+    if((USART_RX_STA&0x8000)!=0)
+		{
+		  usart_monitor();                                       //设定速度，角度，pid
+	  }
+		key_out();                                   //按键改变pid值	 
+		
+//		printf("%d\r\n",pid.ActualSpeed);
+//		printf("%d\r\n",atoi(USART_RX_BUF));
+//		printf("%f\r\n",pid.Kp);
+//		printf("%d\r\n",pid.SetSpeed);
+//		printf("%d\r\n",PID_realize(pid.SetSpeed));
+	}
+}
+
+
+
