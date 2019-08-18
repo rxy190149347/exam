@@ -1,0 +1,35 @@
+#include "stm32f10x.h"
+#include "pid.h"
+#include "usart.h"
+
+extern pid_typedef pid;
+int out;                        //设定pid的输出值
+void PID_Init(void)             //设定pid的初始值
+{
+	pid.SetSpeed = 2000;
+	pid.ActualSpeed = 0;
+	pid.err = 0;
+	pid.err_last = 0;
+	pid.integral = 0;
+	pid.err_next = 0;
+	pid.Kd = 0.2;
+	pid.Ki = 0;
+	pid.Kp = 3;
+}
+
+u16 PID_realize(u16 speed)         //pid的实现过程
+{
+  pid.SetSpeed=speed;
+  pid.err=pid.SetSpeed-pid.ActualSpeed;
+  pid.integral=pid.Kp*(pid.err-pid.err_next)+pid.Ki*pid.err+pid.Kd*(pid.err-2*pid.err_next+pid.err_last);
+  out+=pid.integral;
+  pid.err_last=pid.err_next;
+  pid.err_next=pid.err;
+	if(out>6500)
+		out = 6500;
+	if(out<0)
+		out = 0;
+  return out;
+}
+
+
